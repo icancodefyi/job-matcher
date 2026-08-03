@@ -4,9 +4,17 @@ import { GENERIC_JOB_TERMS, isRealSkill } from "@/lib/resume/skills";
 
 function isGapSkill(raw: string): boolean {
   const skill = raw.trim();
-  if (!skill || skill.length > 42) return false;
+  if (!skill || skill.length > 48) return false;
   const key = skill.toLowerCase();
   if (GENERIC_JOB_TERMS.has(key) || GENERIC_JOB_TERMS.has(skill)) return false;
+  // "docker/ecs", "ai/ml", "js/ts" etc — split and require every part to be real.
+  if (key.includes("/")) {
+    const parts = key.split("/").map((s) => s.trim()).filter(Boolean);
+    if (parts.length === 0) return false;
+    return parts.every((p) => isRealSkill(p));
+  }
+  // Overly-generic 2-4 char acronyms that aren't concrete learnable skills.
+  if (/^(api|ml|ai|nlp|ci|cd|ui|ux|sso|iam|erp|crm)$/.test(key)) return false;
   if (key.includes(" ")) return true;
   return isRealSkill(key);
 }

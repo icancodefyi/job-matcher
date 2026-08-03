@@ -22,15 +22,56 @@ export const GENERIC_JOB_TERMS = new Set([
   "recruiter", "sales", "marketing", "full", "part", "remote", "employee", "staff",
   "training", "benefits", "salary", "pay", "hour", "product", "service", "client",
   "tax", "legal", "admin", "office", "cleaning", "driver", "clerk", "produce",
+  // Common English words the LLM sometimes mistakes for skills.
+  "fast", "design", "open", "maintain", "build", "develop", "create", "manage",
+  "lead", "help", "work", "scale", "production", "quality", "communication",
+  "collaboration", "leadership", "problem", "solving", "analytical", "teamwork",
+  "agile", "scrum", "ownership", "initiative", "detail", "organized", "written",
+  "verbal", "english", "excellent", "strong", "able", "working", "ability",
+  "next", "great", "good", "best", "top", "passion", "solve", "write",
+  "responsible", "responsibilities", "required", "preferred", "will", "must",
+  "nice", "plus", "client", "stakeholder", "cross", "functional", "learning",
+  "growth", "environment", "schedule", "flexible", "deadline", "pressure",
+  "remote-friendly", "distributed", "global", "medium", "scale-up", "startup",
+  "early", "phase", "project", "program", "initiative", "effort", "value",
+  "results", "impact", "outcome", "deliver", "deliverables", "milestones",
+  "paid", "pacing", "pace", "participate", "participation", "partic", "attend",
+  "english", "communication", "advanced", "intermediate", "fluent", "spoken",
+  "written", "verbal", "conversational", "fast-paced", "dynamic", "env",
+  "tech", "stack", "tools", "technology", "technologies", "modern", "cutting",
+]);
+
+const COMMON_ENGLISH = new Set([
+  "a", "an", "the", "and", "or", "but", "of", "in", "on", "at", "to", "for",
+  "with", "by", "from", "as", "is", "are", "was", "were", "be", "been", "being",
+  "has", "have", "had", "do", "does", "did", "will", "would", "can", "could",
+  "should", "may", "might", "must", "shall", "this", "that", "these", "those",
+  "it", "its", "we", "you", "they", "he", "she", "them", "their", "our", "your",
+  "not", "no", "yes", "so", "such", "same", "other", "each", "every", "both",
+  "one", "two", "three", "all", "any", "more", "most", "some", "few", "less",
+  "very", "really", "just", "also", "well", "even", "still", "only", "too",
+  "about", "between", "through", "during", "before", "after", "above", "below",
+  "up", "down", "off", "over", "under", "again", "further", "then", "once",
+  "here", "there", "when", "where", "why", "how", "what", "which", "who",
+  "whom", "whose", "them", "along", "around", "across", "against", "among",
+  "into", "onto", "upon", "within", "without", "because", "while", "since",
+  "until", "whether", "though", "although", "get", "got", "make", "made",
+  "like", "want", "need", "take", "give", "use", "used", "using", "using",
+  "find", "keep", "know", "see", "seem", "say", "tell", "ask", "show",
+  "think", "look", "come", "go", "become", "put", "set", "mean", "call",
+  "key", "core", "area", "areas", "aspect", "field", "range", "level",
 ]);
 
 export function isRealSkill(token: string): boolean {
-  const t = token.toLowerCase();
+  const t = token.toLowerCase().trim();
   if (t.length < 3) return false;
   if (GENERIC_JOB_TERMS.has(t)) return false;
+  if (COMMON_ENGLISH.has(t)) return false;
   if (COMMON_SKILLS.includes(t)) return true;
-  if (/(docker|k8s|ml|nlp|ai|api|ci|sql|aws|gcp|azure|oss|sso|wfh)/.test(t)) return true;
-  if (/\.(js|ts|py|go|rs|rb|php|sh)$/.test(t)) return true;
-  if (COMMON_SKILLS.some((s) => s.startsWith(t) && t.length >= 4)) return true;
+  if (/\b(docker|k8s|ml|nlp|ai|api|ci|sql|aws|gcp|azure|oss|sso|wfh)\b/.test(t)) return true;
+  if (/\.(js|ts|py|go|rs|rb|php|sh|yaml|yml|json|xml|css|html)$/.test(t)) return true;
+  if (COMMON_SKILLS.some((s) => s.startsWith(t + ".") && !COMMON_ENGLISH.has(t))) return true;
+  // Multi-word, hyphenated, or capitalized tech phrases (e.g. "React Native", "MLOps", "RESTful API")
+  if (t.includes(" ") || t.includes("-") || /[A-Z]/.test(token)) return true;
   return false;
 }

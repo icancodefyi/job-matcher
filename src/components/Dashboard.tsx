@@ -161,6 +161,16 @@ export default function Dashboard() {
     }, "analyzing");
   }
 
+  async function saveProfile(updated: ResumeProfile) {
+    await run(async () => {
+      const res = await api<{ profile: ResumeProfile }>("/api/profile", {
+        method: "PUT",
+        body: JSON.stringify(updated),
+      });
+      setProfile(res.profile);
+    }, "saving");
+  }
+
   async function scrape(sources: JobSource[]) {
     await run(async () => {
       const res = await api<{ jobs: Job[]; summary: { totalJobs: number } }>("/api/jobs/scrape", {
@@ -322,6 +332,7 @@ export default function Dashboard() {
             onName={setResumeName}
             onFile={onFile}
             onAnalyze={analyze}
+            onSave={saveProfile}
           />
         )}
 
@@ -401,8 +412,24 @@ function ResumeTab(props: {
   onName: (v: string) => void;
   onFile: (e: ChangeEvent<HTMLInputElement>) => void;
   onAnalyze: () => void;
+  onSave: (profile: ResumeProfile) => void;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState<ResumeProfile | null>(null);
+
+  function startEdit() {
+    if (props.profile) {
+      setDraft(JSON.parse(JSON.stringify(props.profile)) as ResumeProfile);
+      setEditing(true);
+    }
+  }
+  function saveEdit() {
+    if (draft) {
+      props.onSave(draft);
+      setEditing(false);
+    }
+  }
   return (
     <div className="grid gap-6 lg:grid-cols-2">
       <section>
@@ -448,7 +475,18 @@ function ResumeTab(props: {
       </section>
 
       <section>
-        <SectionTitle sub="What the model read from your résumé.">2 · Extracted profile</SectionTitle>
+        <div className="flex items-start justify-between gap-3">
+          <SectionTitle sub="What the model read from your résumé.">2 · Extracted profile</SectionTitle>
+          {props.profile && (
+            <button
+              onClick={() => (editing ? saveEdit() : startEdit())}
+              disabled={props.busy !== null}
+              className="shrink-0 rounded-lg border border-zinc-700 px-3 py-1.5 text-xs text-zinc-300 hover:border-violet-500 hover:text-violet-300 disabled:opacity-50"
+            >
+              {editing ? "Save edits" : "Edit profile"}
+            </button>
+          )}
+        </div>
         {!props.profile ? (
           <div className="rounded-xl border border-dashed border-zinc-800 p-6 text-sm text-zinc-500">
             Upload or paste your résumé, then hit <span className="text-violet-300">Analyze</span> to see your parsed profile here.

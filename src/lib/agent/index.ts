@@ -87,9 +87,10 @@ export async function resumeBullet(
     system:
       "Rewrite ONE resume bullet for the candidate that maximizes fit to the job. Always start with an action verb, include a metric or outcome where plausible, and stay truthful to the candidate's actual experience and work history. Return only the bullet (max 35 words).",
     user: `JOB: ${job.title} (${job.company}) — needs: ${job.tags.join(", ")}\n\nCandidate skills: ${profile.skills.join(", ")}\nWork history:\n${workSummary || "No work history on file"}\nProjects: ${profile.projects.map((p) => `${p.name}: ${p.description}`).join("; ")}\n\nHint from matcher: ${focus}`,
-    maxTokens: 200,
+    maxTokens: 400,
   });
-  return { llm: true, text: text ?? "Could not generate a bullet right now." };
+  const cleaned = (text ?? "").replace(/^["']|["']$/g, "").trim();
+  return { llm: text !== null, text: cleaned || "Tailor this bullet for the role: " + (focus || job.tags.slice(0, 4).join(", ")) };
 }
 
 export async function interviewQuestions(

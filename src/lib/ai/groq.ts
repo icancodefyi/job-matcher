@@ -1,7 +1,7 @@
 import Groq from "groq-sdk";
 import type { ChatCompletionMessageParam } from "groq-sdk/resources/chat/completions";
 
-export const MODEL = process.env.GROQ_MODEL || "openai/gpt-oss-20b";
+export const MODEL = process.env.GROQ_MODEL || "openai/gpt-oss-120b";
 
 export const isAIEnabled = () => Boolean(process.env.GROQ_API_KEY);
 
@@ -111,7 +111,13 @@ export async function completeJSON<T>(
 }
 
 export async function completeText(options: CompleteOptions): Promise<string | null> {
-  return complete({ ...options, temperature: options.temperature ?? 0.7 });
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const raw = await complete({ ...options, temperature: options.temperature ?? 0.7 });
+    const t = raw?.trim();
+    if (t) return t;
+    await new Promise((resolve) => setTimeout(resolve, 500 * (attempt + 1)));
+  }
+  return null;
 }
 
 export async function* streamText(options: CompleteOptions): AsyncGenerator<string> {
