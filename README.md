@@ -30,7 +30,7 @@ heuristics and the UI labels those "heuristic" results.
 
 ### Demo script (2 minutes)
 
-1. **Résumé** tab → *Analyze with GPT-OSS* (sample resume is pre-loaded as an example input) → profile appears.
+1. **Résumé** tab → *Upload résumé* (PDF / .txt / .md) or paste the text → *Analyze with GPT-OSS* → profile appears.
 2. **Jobs** tab → *Scrape live* → listings from RemoteOK · Remotive · HN (all real, no demo data).
 3. **Matches** tab → *Re-run matching* → ranked cards with score, tier, matched/missing skills, "why" and a tailored bullet.
 4. *Compute skill gaps →* each gap shows free learning resources.

@@ -18,18 +18,6 @@ import type {
   SkillGap,
 } from "@/types";
 
-const SAMPLE_RESUME = `Zaid Khan
-Generative AI Developer
-
-I am a Generative AI developer with 2 years of experience building RAG pipelines, LLM agents, and AI chatbots. Skilled in Python, LangChain, FastAPI, Next.js, React, TypeScript, PostgreSQL, Docker. Previously built a resume matching tool and an SEO monitoring SaaS. Senior intern at Ember Labs. Currently in San Francisco, open to remote.
-
-PROJECTS
-1. RAG Job Matcher — built retrieval pipeline with Pinecone and LangChain, FastAPI backend, Next.js frontend.
-2. Video QA bot — RAG over YouTube transcripts using vector database and GPT agents.
-
-EDUCATION
-B.Tech Computer Science`;
-
 const SOURCE_LABEL: Record<JobSource, string> = {
   remoteok: "RemoteOK",
   remotive: "Remotive",
@@ -105,8 +93,8 @@ export default function Dashboard() {
   const [applications, setApplications] = useState<Application[]>([]);
   const [stats, setStats] = useState<Record<string, number> | null>(null);
 
-  const [resumeText, setResumeText] = useState(SAMPLE_RESUME);
-  const [resumeName, setResumeName] = useState("Zaid Khan");
+  const [resumeText, setResumeText] = useState("");
+  const [resumeName, setResumeName] = useState("");
 
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -332,10 +320,6 @@ export default function Dashboard() {
             busy={busy}
             onText={setResumeText}
             onName={setResumeName}
-            onSample={() => {
-              setResumeText(SAMPLE_RESUME);
-              setResumeName("Zaid Khan");
-            }}
             onFile={onFile}
             onAnalyze={analyze}
           />
@@ -415,7 +399,6 @@ function ResumeTab(props: {
   busy: string | null;
   onText: (v: string) => void;
   onName: (v: string) => void;
-  onSample: () => void;
   onFile: (e: ChangeEvent<HTMLInputElement>) => void;
   onAnalyze: () => void;
 }) {
@@ -423,7 +406,7 @@ function ResumeTab(props: {
   return (
     <div className="grid gap-6 lg:grid-cols-2">
       <section>
-        <SectionTitle sub="Upload your résumé (PDF, .txt, .md), paste it, or load the sample.">
+        <SectionTitle sub="Upload your résumé (PDF, .txt, .md) or paste the text.">
           1 · Your résumé
         </SectionTitle>
         <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4">
@@ -434,14 +417,11 @@ function ResumeTab(props: {
               placeholder="Your name (optional)"
               className="flex-1 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-violet-500"
             />
-            <button onClick={props.onSample} className="rounded-lg border border-zinc-700 px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-800">
-              Load sample
-            </button>
             <button
               onClick={() => fileRef.current?.click()}
               className="rounded-lg border border-zinc-700 px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-800"
             >
-              Upload
+              Upload résumé
             </button>
             <input ref={fileRef} type="file" accept=".pdf,.txt,.md,.markdown" hidden onChange={props.onFile} />
           </div>
@@ -449,6 +429,7 @@ function ResumeTab(props: {
             value={props.resumeText}
             onChange={(e) => props.onText(e.target.value)}
             rows={14}
+            placeholder="Paste your résumé text here, or use the Upload button (PDF / .txt / .md)."
             className="w-full resize-y rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 font-mono text-xs text-zinc-200 outline-none focus:border-violet-500"
           />
           <div className="mt-3 flex items-center gap-3">
@@ -470,7 +451,7 @@ function ResumeTab(props: {
         <SectionTitle sub="What the model read from your résumé.">2 · Extracted profile</SectionTitle>
         {!props.profile ? (
           <div className="rounded-xl border border-dashed border-zinc-800 p-6 text-sm text-zinc-500">
-            Paste text and hit <span className="text-violet-300">Analyze</span> to see your parsed profile here.
+            Upload or paste your résumé, then hit <span className="text-violet-300">Analyze</span> to see your parsed profile here.
           </div>
         ) : (
           <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4">
