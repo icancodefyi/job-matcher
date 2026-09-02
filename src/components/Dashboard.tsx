@@ -160,6 +160,21 @@ export default function Dashboard() {
     }, "analyzing");
   }
 
+  async function analyzePdf(base64: string, fileName: string) {
+    await run(async () => {
+      const res = await api<{ profile: ResumeProfile; extractedText?: string }>(
+        "/api/resume/analyze",
+        {
+          method: "POST",
+          body: JSON.stringify({ base64, fileName, name: resumeName }),
+        },
+      );
+      if (res.extractedText) setResumeText(res.extractedText);
+      setProfile(res.profile);
+      setTab("jobs");
+    }, "analyzing");
+  }
+
   async function scrape(sources: JobSource[]) {
     await run(async () => {
       const res = await api<{ jobs: Job[]; summary: { totalJobs: number } }>("/api/jobs/scrape", {
@@ -220,6 +235,17 @@ export default function Dashboard() {
   function onFile(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+    e.target.value = "";
+    if (/\.pdf$/i.test(file.name) || file.type === "application/pdf") {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const dataUrl = String(reader.result ?? "");
+        const base64 = dataUrl.includes("base64,") ? dataUrl.split("base64,")[1] : dataUrl;
+        void analyzePdf(base64, file.name);
+      };
+      reader.readAsDataURL(file);
+      return;
+    }
     const reader = new FileReader();
     reader.onload = () => setResumeText(String(reader.result ?? ""));
     reader.readAsText(file);
@@ -399,7 +425,7 @@ function ResumeTab(props: {
   return (
     <div className="grid gap-6 lg:grid-cols-2">
       <section>
-        <SectionTitle sub="Paste your résumé, upload a .txt/.md file, or load the sample.">
+        <SectionTitle sub="Upload your résumé (PDF, .txt, .md), paste it, or load the sample.">
           1 · Your résumé
         </SectionTitle>
         <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4">
@@ -419,7 +445,7 @@ function ResumeTab(props: {
             >
               Upload
             </button>
-            <input ref={fileRef} type="file" accept=".txt,.md,.markdown" hidden onChange={props.onFile} />
+            <input ref={fileRef} type="file" accept=".pdf,.txt,.md,.markdown" hidden onChange={props.onFile} />
           </div>
           <textarea
             value={props.resumeText}

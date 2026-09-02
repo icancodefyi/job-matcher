@@ -42,7 +42,7 @@ heuristics and the UI labels those "heuristic" results.
 | Area | What it does | Files |
 |---|---|---|
 | Job scraper | RemoteOK (JSON API), Remotive (JSON API), HN "Who's hiring" (Algolia) + curated demo seed | `src/lib/scrapers/*` |
-| Resume parser | LLM extracts summary, skills, seniority, target role, projects; heuristic fallback | `src/lib/resume/analyze.ts` |
+| Resume parser | Upload PDF/.txt/.md or paste → text extracted (pdf-parse) → LLM extracts summary, skills, seniority, target role, projects; heuristic fallback | `src/lib/resume/analyze.ts`, `extractPdf.ts` |
 | Matcher | Deterministic pre-score + GPT-OSS "recruiter" verdict via structured JSON output | `src/lib/match/*` |
 | Skill gaps | Aggregates missing skills across top matches → curated learning resources | `src/lib/match/gaps.ts`, `resources.ts` |
 | Agent | Cover letter, resume re-bullet, interview Qs, 7-day action plan | `src/lib/agent/index.ts` |
@@ -72,3 +72,7 @@ heuristics and the UI labels those "heuristic" results.
   "small" option; override with `GROQ_MODEL` if you prefer 120B.
 - Ground truths: fallback `seedJobs()` (10 curated roles) lets the entire loop
   demo offline.
+- **PDF extraction:** `pdf-parse@1.1.1` is imported from its inner path
+  (`pdf-parse/lib/pdf-parse.js`) — the package's main entry enters "debug mode"
+  under bundlers and tries to read a test PDF at require time, which 500s in
+  Next.js. Scanned/image-only PDFs return a clean 422.
