@@ -32,7 +32,7 @@ B.Tech Computer Science`;
 
 const SOURCE_LABEL: Record<JobSource, string> = {
   remoteok: "RemoteOK",
-  weworkremotely: "WeWorkRemotely",
+  remotive: "Remotive",
   hackernews: "HN Hiring",
   greenhouse: "Greenhouse",
   seed: "Demo",
@@ -40,7 +40,7 @@ const SOURCE_LABEL: Record<JobSource, string> = {
 
 const SOURCE_COLOR: Record<JobSource, string> = {
   remoteok: "bg-sky-500/10 text-sky-400 border-sky-500/20",
-  weworkremotely: "bg-violet-500/10 text-violet-400 border-violet-500/20",
+  remotive: "bg-violet-500/10 text-violet-400 border-violet-500/20",
   hackernews: "bg-orange-500/10 text-orange-400 border-orange-500/20",
   greenhouse: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
   seed: "bg-zinc-500/10 text-zinc-400 border-zinc-500/20",
@@ -521,11 +521,11 @@ function JobsTab(props: {
       <SectionTitle sub="Pull live listings from free, scrape-friendly sources.">Jobs</SectionTitle>
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <button
-          onClick={() => props.onScrape(["remoteok", "weworkremotely", "hackernews"])}
+          onClick={() => props.onScrape(["remoteok", "remotive", "hackernews"])}
           disabled={props.busy !== null}
           className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-500 disabled:opacity-50"
         >
-          {props.busy === "scraping" ? "Scraping…" : "Scrape live (RemoteOK · WWR · HN)"}
+          {props.busy === "scraping" ? "Scraping…" : "Scrape live (RemoteOK · Remotive · HN)"}
         </button>
         <button
           onClick={() => props.onScrape(["seed"])}

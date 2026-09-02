@@ -18,6 +18,14 @@ interface RemoteOkRaw {
   currency?: string;
 }
 
+function absUrl(value: string | undefined, fallback: string): string {
+  const s = (value ?? "").trim();
+  if (!s) return fallback;
+  if (/^https?:\/\//i.test(s)) return s;
+  if (s.startsWith("//")) return `https:${s}`;
+  return `https://remoteok.com${s.startsWith("/") ? s : `/${s}`}`;
+}
+
 export async function scrapeRemoteOk(): Promise<Job[]> {
   const data = await fetchJson<RemoteOkRaw[]>("https://remoteok.com/api");
   if (!Array.isArray(data)) return [];
@@ -26,6 +34,8 @@ export async function scrapeRemoteOk(): Promise<Job[]> {
     if (!item?.position) continue;
     const salary = parseSalary(item.salary_min ?? item.salary_max ?? "");
     const slug = item.slug ?? String(item.id);
+    const url = absUrl(item.url, `https://remoteok.com/remote-jobs/${slug}`);
+    const applyUrl = absUrl(item.apply_url, url);
     jobs.push(
       buildJob({
         source: "remoteok",
@@ -35,8 +45,8 @@ export async function scrapeRemoteOk(): Promise<Job[]> {
         location: item.location ? [item.location] : ["Remote"],
         tags: item.tags ?? [],
         description: item.description ? stripHtml(item.description) : "",
-        url: item.url ? `https://remoteok.com${item.url}` : `https://remoteok.com/remote-jobs/${slug}`,
-        applyUrl: item.apply_url || item.url ? (item.url ? `https://remoteok.com${item.url}` : `https://remoteok.com/remote-jobs/${slug}`) : "",
+        url,
+        applyUrl,
         salaryMin: salary?.min ?? null,
         salaryMax: salary?.max ?? null,
         currency: item.currency ?? "USD",

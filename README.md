@@ -41,7 +41,7 @@ heuristics and the UI labels those "heuristic" results.
 
 | Area | What it does | Files |
 |---|---|---|
-| Job scraper | RemoteOK (JSON API), WeWorkRemotely (RSS), HN "Who's hiring" (Algolia) + curated demo seed | `src/lib/scrapers/*` |
+| Job scraper | RemoteOK (JSON API), Remotive (JSON API), HN "Who's hiring" (Algolia) + curated demo seed | `src/lib/scrapers/*` |
 | Resume parser | LLM extracts summary, skills, seniority, target role, projects; heuristic fallback | `src/lib/resume/analyze.ts` |
 | Matcher | Deterministic pre-score + GPT-OSS "recruiter" verdict via structured JSON output | `src/lib/match/*` |
 | Skill gaps | Aggregates missing skills across top matches → curated learning resources | `src/lib/match/gaps.ts`, `resources.ts` |

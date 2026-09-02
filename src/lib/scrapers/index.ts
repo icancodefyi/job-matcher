@@ -1,7 +1,7 @@
 import type { Job, JobSource, ScrapeSummary } from "@/types";
 import { dedupeJobs } from "./normalize";
 import { scrapeRemoteOk } from "./remoteok";
-import { scrapeWeWorkRemotely } from "./weworkremotely";
+import { scrapeRemotive } from "./remotive";
 import { scrapeHackerNews } from "./hackernews";
 import { seedJobs } from "./seed";
 
@@ -22,7 +22,7 @@ export async function scrapeSources(
 
   const runners: Record<JobSource, () => Promise<Job[]>> = {
     remoteok: scrapeRemoteOk,
-    weworkremotely: scrapeWeWorkRemotely,
+    remotive: scrapeRemotive,
     hackernews: scrapeHackerNews,
     greenhouse: async () => [],
     seed: async () => seedJobs(),

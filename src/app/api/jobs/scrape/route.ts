@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 const VALID_SOURCES: JobSource[] = [
   "remoteok",
-  "weworkremotely",
+  "remotive",
   "hackernews",
   "seed",
 ];
@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
     body = {};
   }
 
-  const sources = (body.sources ?? ["remoteok", "weworkremotely", "hackernews"])
+  const sources = (body.sources ?? ["remoteok", "remotive", "hackernews"])
     .filter((s): s is JobSource => VALID_SOURCES.includes(s as JobSource))
     .slice(0, 3) as JobSource[];
 

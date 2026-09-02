@@ -1,6 +1,6 @@
 export type JobSource =
   | "remoteok"
-  | "weworkremotely"
+  | "remotive"
   | "hackernews"
   | "greenhouse"
   | "seed";
