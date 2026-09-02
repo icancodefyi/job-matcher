@@ -1,36 +1,74 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# JobMatcher — AI Job Scraper & Resume Matcher
 
-## Getting Started
+A 1–week Build Sprint MVP for the **Generative AI Developer Intern** assignment:
+scrape jobs from free sources → analyze a resume with an LLM → get ranked matches
+with **skill-gap learning paths** so you become the best candidate.
 
-First, run the development server:
+Built with **Next.js 16 (App Router) + TypeScript + Tailwind v4** and **Groq's
+`openai/gpt-oss-20b`** (the smallest GPT-OSS model hosted on GroqCloud) for all
+GenAI steps.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## The loop
+
+```
+Scrape live jobs (free, scrape-friendly)  →  Analyze résumé (GPT-OSS extracts profile)
+        →  Ranked matches (deterministic pre-score + LLM recruiter verdict)
+        →  Skill-gap learning path (missing skills → YouTube/docs/courses)
+        →  Agentic extras (cover letter, resume bullet, interview prep, 7-day plan)
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Quickstart
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+cp .env.example .env.local   # add GROQ_API_KEY=
+pnpm install
+pnpm dev                     # → http://localhost:3000
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+The app works **without** a key too: every LLM step falls back to deterministic
+heuristics and the UI labels those "heuristic" results.
 
-## Learn More
+### Demo script (2 minutes)
 
-To learn more about Next.js, take a look at the following resources:
+1. **Résumé** tab → *Analyze with GPT-OSS* (sample resume is pre-loaded) → profile appears.
+2. **Jobs** tab → *Load demo jobs* (or *Scrape live* for RemoteOK · WeWorkRemotely · HN).
+3. **Matches** tab → *Re-run matching* → ranked cards with score, tier, matched/missing skills, "why" and a tailored bullet.
+4. *Compute skill gaps →* each gap shows free learning resources.
+5. **Agent Plan** → *Generate my action plan* → a prioritized 7-day study + apply schedule.
+6. Set status on any match card (**Applied / Interview / Offer**) → see the **Applications** tab.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Features
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Area | What it does | Files |
+|---|---|---|
+| Job scraper | RemoteOK (JSON API), WeWorkRemotely (RSS), HN "Who's hiring" (Algolia) + curated demo seed | `src/lib/scrapers/*` |
+| Resume parser | LLM extracts summary, skills, seniority, target role, projects; heuristic fallback | `src/lib/resume/analyze.ts` |
+| Matcher | Deterministic pre-score + GPT-OSS "recruiter" verdict via structured JSON output | `src/lib/match/*` |
+| Skill gaps | Aggregates missing skills across top matches → curated learning resources | `src/lib/match/gaps.ts`, `resources.ts` |
+| Agent | Cover letter, resume re-bullet, interview Qs, 7-day action plan | `src/lib/agent/index.ts` |
+| Storage | JSON file at `.data/db.json` (swap for MongoDB later — same `Store` interface) | `src/lib/data/store.ts` |
+| UI | 6-tab dashboard: Résumé · Jobs · Matches · Skill Gaps · Plan · Applications | `src/components/Dashboard.tsx` |
 
-## Deploy on Vercel
+## API routes
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+| Route | Method | Purpose |
+|---|---|---|
+| `/api/jobs` | GET | list stored jobs (+ filters) |
+| `/api/jobs/scrape` | POST | run scrapers, upsert, always fall back to seed if live source fails |
+| `/api/resume/analyze` | POST | parse résumé text → `ResumeProfile` |
+| `/api/matches` | GET/POST | list / run matching over stored profile + jobs |
+| `/api/gaps` | POST | skill-gap aggregation → learning resources |
+| `/api/applications` | GET/POST | application tracker |
+| `/api/agent` | POST | `{action: plan\|cover-letter\|rebullet\|interview, jobId?}` |
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Notes for demo day
+
+- **Vercel (production) note:** the default store writes to the local filesystem
+  (`.data/db.json`), which is ephemeral in serverless. For a production deploy,
+  implement the MongoDB adapter behind `src/lib/data/store.ts` (schema is already
+  modeled after the parent `impiseo` project's `mongodb` usage).
+- **Model choice:** Groq docs list only `openai/gpt-oss-120b` and
+  `openai/gpt-oss-20b` — there is no `gpt-oss-small` on GroqCloud. The 20B is the
+  "small" option; override with `GROQ_MODEL` if you prefer 120B.
+- Ground truths: fallback `seedJobs()` (10 curated roles) lets the entire loop
+  demo offline.
