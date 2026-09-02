@@ -2,8 +2,7 @@ export type JobSource =
   | "remoteok"
   | "remotive"
   | "hackernews"
-  | "greenhouse"
-  | "seed";
+  | "greenhouse";
 
 export interface Job {
   id: string;
@@ -107,7 +106,6 @@ export interface ScrapeSummary {
 
 export interface JobScrapeRequest {
   sources?: JobSource[];
-  includeSeed?: boolean;
   limit?: number;
   greenhouseOrgs?: string[];
 }

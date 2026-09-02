@@ -9,7 +9,6 @@ const VALID_SOURCES: JobSource[] = [
   "remoteok",
   "remotive",
   "hackernews",
-  "seed",
 ];
 
 export async function POST(request: NextRequest) {
@@ -25,7 +24,6 @@ export async function POST(request: NextRequest) {
     .slice(0, 3) as JobSource[];
 
   const { jobs, summary } = await scrapeSources(sources, {
-    includeSeed: body.includeSeed ?? true,
     limit: body.limit ?? 300,
   });
 

@@ -35,7 +35,6 @@ const SOURCE_LABEL: Record<JobSource, string> = {
   remotive: "Remotive",
   hackernews: "HN Hiring",
   greenhouse: "Greenhouse",
-  seed: "Demo",
 };
 
 const SOURCE_COLOR: Record<JobSource, string> = {
@@ -43,7 +42,6 @@ const SOURCE_COLOR: Record<JobSource, string> = {
   remotive: "bg-violet-500/10 text-violet-400 border-violet-500/20",
   hackernews: "bg-orange-500/10 text-orange-400 border-orange-500/20",
   greenhouse: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
-  seed: "bg-zinc-500/10 text-zinc-400 border-zinc-500/20",
 };
 
 const TIER_COLOR: Record<string, string> = {
@@ -179,7 +177,7 @@ export default function Dashboard() {
     await run(async () => {
       const res = await api<{ jobs: Job[]; summary: { totalJobs: number } }>("/api/jobs/scrape", {
         method: "POST",
-        body: JSON.stringify({ sources, includeSeed: true, limit: 250 }),
+        body: JSON.stringify({ sources, limit: 250 }),
       });
       setJobs(res.jobs);
       setStats((s) => ({ ...(s ?? {}), jobs: res.summary.totalJobs }));
@@ -553,13 +551,6 @@ function JobsTab(props: {
         >
           {props.busy === "scraping" ? "Scraping…" : "Scrape live (RemoteOK · Remotive · HN)"}
         </button>
-        <button
-          onClick={() => props.onScrape(["seed"])}
-          disabled={props.busy !== null}
-          className="rounded-lg border border-zinc-700 px-4 py-2 text-sm font-medium text-zinc-300 hover:bg-zinc-800"
-        >
-          Load demo jobs
-        </button>
         {props.profileReady && (
           <button
             onClick={props.onMatch}
@@ -611,7 +602,7 @@ function JobsTab(props: {
         ))}
         {props.jobs.length === 0 && (
           <div className="col-span-full rounded-xl border border-dashed border-zinc-800 p-10 text-center text-sm text-zinc-500">
-            No jobs yet. Hit <span className="text-violet-300">Scrape live</span> or <span className="text-violet-300">Load demo jobs</span>.
+            No jobs yet. Hit <span className="text-violet-300">Scrape live</span> to pull listings from RemoteOK, Remotive, and HN.
           </div>
         )}
       </div>

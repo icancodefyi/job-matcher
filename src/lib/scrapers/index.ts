@@ -3,7 +3,6 @@ import { dedupeJobs } from "./normalize";
 import { scrapeRemoteOk } from "./remoteok";
 import { scrapeRemotive } from "./remotive";
 import { scrapeHackerNews } from "./hackernews";
-import { seedJobs } from "./seed";
 
 interface SourceResult {
   source: JobSource;
@@ -14,7 +13,7 @@ interface SourceResult {
 
 export async function scrapeSources(
   sources: JobSource[],
-  opts: { includeSeed?: boolean; limit?: number } = {},
+  opts: { limit?: number } = {},
 ): Promise<{ jobs: Job[]; summary: ScrapeSummary }> {
   const jobs: Job[] = [];
   const results: SourceResult[] = [];
@@ -25,11 +24,12 @@ export async function scrapeSources(
     remotive: scrapeRemotive,
     hackernews: scrapeHackerNews,
     greenhouse: async () => [],
-    seed: async () => seedJobs(),
   };
 
   const wanted = sources.filter((s) => Object.keys(runners).includes(s));
-  if (wanted.length === 0) wanted.push("seed");
+  if (wanted.length === 0) {
+    return { jobs: [], summary: { fetched: 0, newJobs: 0, sources: [] } };
+  }
 
   const settled = await Promise.allSettled(
     wanted.map((s) => runners[s]()),
@@ -50,12 +50,6 @@ export async function scrapeSources(
       });
     }
   });
-
-  if (opts.includeSeed && !results.some((r) => r.source === "seed" && r.count > 0)) {
-    const seeds = seedJobs();
-    jobs.push(...seeds);
-    results.push({ source: "seed", ok: true, count: seeds.length });
-  }
 
   const unique = dedupeJobs(jobs);
   return {

@@ -30,8 +30,8 @@ heuristics and the UI labels those "heuristic" results.
 
 ### Demo script (2 minutes)
 
-1. **Résumé** tab → *Analyze with GPT-OSS* (sample resume is pre-loaded) → profile appears.
-2. **Jobs** tab → *Load demo jobs* (or *Scrape live* for RemoteOK · WeWorkRemotely · HN).
+1. **Résumé** tab → *Analyze with GPT-OSS* (sample resume is pre-loaded as an example input) → profile appears.
+2. **Jobs** tab → *Scrape live* → listings from RemoteOK · Remotive · HN (all real, no demo data).
 3. **Matches** tab → *Re-run matching* → ranked cards with score, tier, matched/missing skills, "why" and a tailored bullet.
 4. *Compute skill gaps →* each gap shows free learning resources.
 5. **Agent Plan** → *Generate my action plan* → a prioritized 7-day study + apply schedule.
@@ -41,7 +41,7 @@ heuristics and the UI labels those "heuristic" results.
 
 | Area | What it does | Files |
 |---|---|---|
-| Job scraper | RemoteOK (JSON API), Remotive (JSON API), HN "Who's hiring" (Algolia) + curated demo seed | `src/lib/scrapers/*` |
+| Job scraper | RemoteOK (JSON API), Remotive (JSON API), HN "Who's hiring" (Algolia) — no demo/fake data | `src/lib/scrapers/*` |
 | Resume parser | Upload PDF/.txt/.md or paste → text extracted (pdf-parse) → LLM extracts summary, skills, seniority, target role, projects; heuristic fallback | `src/lib/resume/analyze.ts`, `extractPdf.ts` |
 | Matcher | Deterministic pre-score + GPT-OSS "recruiter" verdict via structured JSON output | `src/lib/match/*` |
 | Skill gaps | Aggregates missing skills across top matches → curated learning resources | `src/lib/match/gaps.ts`, `resources.ts` |
@@ -54,7 +54,7 @@ heuristics and the UI labels those "heuristic" results.
 | Route | Method | Purpose |
 |---|---|---|
 | `/api/jobs` | GET | list stored jobs (+ filters) |
-| `/api/jobs/scrape` | POST | run scrapers, upsert, always fall back to seed if live source fails |
+| `/api/jobs/scrape` | POST | run scrapers (RemoteOK, Remotive, HN), upsert |
 | `/api/resume/analyze` | POST | parse résumé text → `ResumeProfile` |
 | `/api/matches` | GET/POST | list / run matching over stored profile + jobs |
 | `/api/gaps` | POST | skill-gap aggregation → learning resources |
@@ -70,8 +70,6 @@ heuristics and the UI labels those "heuristic" results.
 - **Model choice:** Groq docs list only `openai/gpt-oss-120b` and
   `openai/gpt-oss-20b` — there is no `gpt-oss-small` on GroqCloud. The 20B is the
   "small" option; override with `GROQ_MODEL` if you prefer 120B.
-- Ground truths: fallback `seedJobs()` (10 curated roles) lets the entire loop
-  demo offline.
 - **PDF extraction:** `pdf-parse@1.1.1` is imported from its inner path
   (`pdf-parse/lib/pdf-parse.js`) — the package's main entry enters "debug mode"
   under bundlers and tries to read a test PDF at require time, which 500s in
