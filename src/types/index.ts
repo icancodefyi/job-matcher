@@ -29,6 +29,16 @@ export interface Project {
   description: string;
 }
 
+export interface WorkExperience {
+  company: string;
+  title: string;
+  startDate?: string;
+  endDate?: string;
+  duration?: string;
+  description?: string;
+  highlights?: string[];
+}
+
 export interface ResumeProfile {
   id: string;
   name?: string;
@@ -41,6 +51,19 @@ export interface ResumeProfile {
   preferredLocation: string[];
   projects: Project[];
   education?: string;
+  contact: {
+    email?: string;
+    phone?: string;
+    linkedIn?: string;
+    github?: string;
+    portfolioUrl?: string;
+  };
+  workExperience: WorkExperience[];
+  currentCompany?: string;
+  currentTitle?: string;
+  certifications?: string[];
+  languages?: string[];
+  availability?: string;
   llmFailed: boolean;
   createdAt: string;
   updatedAt: string;

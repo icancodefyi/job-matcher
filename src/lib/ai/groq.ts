@@ -13,22 +13,38 @@ function client(): Groq {
 
 function extractJson(raw: string): unknown | null {
   const text = raw.trim();
+  const candidates: string[] = [];
   try {
     return JSON.parse(text);
   } catch {
     const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/);
-    const candidate = fenced ? fenced[1] : text;
-    const start = candidate.indexOf("{");
-    const end = candidate.lastIndexOf("}");
-    if (start >= 0 && end > start) {
+    if (fenced) candidates.push(fenced[1]);
+    const start = text.indexOf("{");
+    const end = text.lastIndexOf("}");
+    if (start >= 0 && end > start) candidates.push(text.slice(start, end + 1));
+  }
+
+  for (const candidate of candidates) {
+    for (const attempt of [candidate, repairJson(candidate)]) {
+      if (!attempt) continue;
+      const s = attempt.indexOf("{");
+      const en = attempt.lastIndexOf("}");
+      if (s < 0 || en <= s) continue;
       try {
-        return JSON.parse(candidate.slice(start, end + 1));
+        return JSON.parse(attempt.slice(s, en + 1));
       } catch {
-        return null;
+        // try next
       }
     }
-    return null;
   }
+  return null;
+}
+
+function repairJson(raw: string): string {
+  return raw
+    .replace(/,\s*([}\]])/g, "$1")
+    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, "")
+    .replace(/\\(?!["\\/bfnrtu])/g, "");
 }
 
 interface CompleteOptions {
@@ -44,18 +60,32 @@ async function complete(options: CompleteOptions): Promise<string | null> {
     { role: "system", content: options.system },
     { role: "user", content: options.user },
   ];
-  try {
-    const res = await client().chat.completions.create({
-      model: MODEL,
-      messages,
-      temperature: options.temperature ?? 0.4,
-      max_tokens: options.maxTokens ?? 1200,
-    });
-    return res.choices[0]?.message?.content ?? null;
-  } catch (err) {
-    console.error("[groq] completion failed:", err);
-    return null;
+  const maxTries = 4;
+  for (let attempt = 0; attempt < maxTries; attempt++) {
+    try {
+      const res = await client().chat.completions.create({
+        model: MODEL,
+        messages,
+        temperature: options.temperature ?? 0.4,
+        max_tokens: options.maxTokens ?? 1200,
+      });
+      return res.choices[0]?.message?.content ?? null;
+    } catch (err) {
+      const status = (err as { status?: number })?.status;
+      const message = err instanceof Error ? err.message : String(err);
+      const rateLimited = status === 429 || /rate\s*limit|tokens.*per\s*minute|\b429\b/i.test(message);
+      const isLastTry = attempt === maxTries - 1;
+      if (rateLimited && !isLastTry) {
+        const backoff = 1500 * Math.pow(2, attempt) + Math.floor(Math.random() * 500);
+        console.warn(`[groq] rate limited, retrying in ${backoff}ms (attempt ${attempt + 1}/${maxTries})`);
+        await new Promise((resolve) => setTimeout(resolve, backoff));
+        continue;
+      }
+      console.error("[groq] completion failed:", err);
+      return null;
+    }
   }
+  return null;
 }
 
 export async function completeJSON<T>(
@@ -67,7 +97,17 @@ export async function completeJSON<T>(
     temperature: 0.2,
   });
   if (!raw) return null;
-  return extractJson(raw) as T | null;
+  const parsed = extractJson(raw) as T | null;
+  if (parsed === null) {
+    try {
+      const s = raw.indexOf("{");
+      const en = raw.lastIndexOf("}");
+      JSON.parse(raw.slice(s, en + 1));
+    } catch (e) {
+      console.error("[groq] JSON parse failed:", (e as Error).message);
+    }
+  }
+  return parsed;
 }
 
 export async function completeText(options: CompleteOptions): Promise<string | null> {

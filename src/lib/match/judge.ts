@@ -2,7 +2,22 @@ import type { Job, MatchJudge, MatchResult, ResumeProfile } from "@/types";
 import { completeJSON } from "@/lib/ai/groq";
 import { inferSkillOverlap, scoreJob } from "./pre-score";
 
-const MAX_JUDGED = 15;
+const MAX_JUDGED = 8;
+const JUDGE_CONCURRENCY = 2;
+
+async function mapLimit<T, R>(items: T[], limit: number, fn: (item: T) => Promise<R>): Promise<R[]> {
+  const results: R[] = new Array(items.length);
+  let cursor = 0;
+  async function worker() {
+    while (cursor < items.length) {
+      const idx = cursor++;
+      results[idx] = await fn(items[idx]);
+    }
+  }
+  const workers = Array.from({ length: Math.min(limit, items.length) }, () => worker());
+  await Promise.all(workers);
+  return results;
+}
 
 function fallbackJudge(profile: ResumeProfile, job: Job, preScore: number): MatchJudge {
   const { matched, missing } = inferSkillOverlap(profile, job);
@@ -33,16 +48,14 @@ export async function judgeMatches(
     .sort((a, b) => b.preScore - a.preScore);
 
   const top = scored.slice(0, MAX_JUDGED);
-  const judged = await Promise.all(
-    top.map(async ({ job, preScore }) => {
-      let judge: MatchJudge | null = null;
-      if (process.env.GROQ_API_KEY) {
-        judge = await llmJudge(profile, job, preScore);
-      }
-      if (!judge) judge = fallbackJudge(profile, job, preScore);
-      return toResult(job, preScore, judge);
-    }),
-  );
+  const judged = await mapLimit(top, JUDGE_CONCURRENCY, async ({ job, preScore }) => {
+    let judge: MatchJudge | null = null;
+    if (process.env.GROQ_API_KEY) {
+      judge = await llmJudge(profile, job, preScore);
+    }
+    if (!judge) judge = fallbackJudge(profile, job, preScore);
+    return toResult(job, preScore, judge);
+  });
 
   const results = [...judged];
   const rest = scored.slice(MAX_JUDGED);
@@ -78,7 +91,11 @@ async function llmJudge(
 - "tailoredBullet": string (a single resume bullet the candidate could add proving fit for THIS job)
 - "tier": "strong" | "possible" | "weak"`;
 
-  const user = `PRE-SCORE: ${preScore}/100 (deterministic estimate — you may adjust)\n\n=== CANDIDATE PROFILE ===\nSummary: ${profile.summary}\nSkills: ${profile.skills.join(", ")}\nYears experience: ${profile.yearsOfExperience}\nSeniority: ${profile.seniority ?? "n/a"}\nTarget role: ${profile.targetRole}\nPreferred location: ${profile.preferredLocation.join(", ") || "any"}\nProjects: ${profile.projects.map((p) => `${p.name}: ${p.description}`).join(" | ")}\n\n=== JOB ===\nTitle: ${job.title}\nCompany: ${job.company}\nLocation: ${job.location.join(", ")}\nTags: ${job.tags.join(", ")}\nSalary: ${job.salaryMin ?? "?"}-${job.salaryMax ?? "?"}\nDescription:\n${job.description.slice(0, 2600)}`;
+  const workHistory = profile.workExperience
+    .slice(0, 4)
+    .map((w) => `${w.title} at ${w.company}${w.duration ? ` (${w.duration})` : ""}${w.highlights?.length ? ` — ${w.highlights.slice(0, 2).join("; ")}` : ""}`)
+    .join(" | ");
+  const user = `PRE-SCORE: ${preScore}/100 (deterministic estimate — you may adjust)\n\n=== CANDIDATE PROFILE ===\nSummary: ${profile.summary}\nSkills: ${profile.skills.join(", ")}\nYears experience: ${profile.yearsOfExperience}\nSeniority: ${profile.seniority ?? "n/a"}\nTarget role: ${profile.targetRole}\nPreferred location: ${profile.preferredLocation.join(", ") || "any"}\nWork history: ${workHistory || "n/a"}\nProjects: ${profile.projects.map((p) => `${p.name}: ${p.description}`).join(" | ")}\n\n=== JOB ===\nTitle: ${job.title}\nCompany: ${job.company}\nLocation: ${job.location.join(", ")}\nTags: ${job.tags.join(", ")}\nSalary: ${job.salaryMin ?? "?"}-${job.salaryMax ?? "?"}\nDescription:\n${job.description.slice(0, 2600)}`;
 
   const res = await completeJSON<JudgeResponse>({ system, user, maxTokens: 900 });
   if (!res) return null;

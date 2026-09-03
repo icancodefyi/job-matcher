@@ -460,6 +460,8 @@ function ResumeTab(props: {
                 Groq unavailable — falling back to heuristic parsing. Add <code>GROQ_API_KEY</code> for full analysis.
               </div>
             )}
+
+            {/* Name + Role + Seniority */}
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div>
                 <p className="text-xs text-zinc-500">Name</p>
@@ -479,31 +481,139 @@ function ResumeTab(props: {
                   {props.profile.seniority ?? "unknown"}
                 </span>
               </div>
-              <div className="col-span-2">
-                <p className="text-xs text-zinc-500">Summary</p>
-                <p className="text-sm leading-relaxed text-zinc-300">{props.profile.summary}</p>
+              {props.profile.currentCompany && (
+                <div>
+                  <p className="text-xs text-zinc-500">Current company</p>
+                  <p className="font-semibold text-white">{props.profile.currentCompany}</p>
+                </div>
+              )}
+              {props.profile.currentTitle && (
+                <div>
+                  <p className="text-xs text-zinc-500">Current title</p>
+                  <p className="font-semibold text-white">{props.profile.currentTitle}</p>
+                </div>
+              )}
+            </div>
+
+            {/* Contact */}
+            {Object.values(props.profile.contact).some(Boolean) && (
+              <div className="mt-3 flex flex-wrap gap-2 text-xs">
+                {props.profile.contact.email && (
+                  <a href={`mailto:${props.profile.contact.email}`} className="rounded-full border border-zinc-700 bg-zinc-800/60 px-2.5 py-1 text-zinc-300 hover:border-violet-500 hover:text-violet-300">
+                    {props.profile.contact.email}
+                  </a>
+                )}
+                {props.profile.contact.phone && (
+                  <a href={`tel:${props.profile.contact.phone}`} className="rounded-full border border-zinc-700 bg-zinc-800/60 px-2.5 py-1 text-zinc-300 hover:border-violet-500 hover:text-violet-300">
+                    {props.profile.contact.phone}
+                  </a>
+                )}
+                {props.profile.contact.linkedIn && (
+                  <a href={props.profile.contact.linkedIn.startsWith("http") ? props.profile.contact.linkedIn : `https://${props.profile.contact.linkedIn}`} target="_blank" rel="noopener noreferrer" className="rounded-full border border-zinc-700 bg-zinc-800/60 px-2.5 py-1 text-zinc-300 hover:border-violet-500 hover:text-violet-300">
+                    LinkedIn ↗
+                  </a>
+                )}
+                {props.profile.contact.github && (
+                  <a href={props.profile.contact.github.startsWith("http") ? props.profile.contact.github : `https://${props.profile.contact.github}`} target="_blank" rel="noopener noreferrer" className="rounded-full border border-zinc-700 bg-zinc-800/60 px-2.5 py-1 text-zinc-300 hover:border-violet-500 hover:text-violet-300">
+                    GitHub ↗
+                  </a>
+                )}
+                {props.profile.contact.portfolioUrl && (
+                  <a href={props.profile.contact.portfolioUrl.startsWith("http") ? props.profile.contact.portfolioUrl : `https://${props.profile.contact.portfolioUrl}`} target="_blank" rel="noopener noreferrer" className="rounded-full border border-zinc-700 bg-zinc-800/60 px-2.5 py-1 text-zinc-300 hover:border-violet-500 hover:text-violet-300">
+                    Portfolio ↗
+                  </a>
+                )}
               </div>
-              <div className="col-span-2">
-                <p className="mb-1.5 text-xs text-zinc-500">Skills {props.profile.skills.length ? `(${props.profile.skills.length})` : ""}</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {props.profile.skills.map((s) => (
-                    <Chip key={s} tone="match">
-                      {s}
-                    </Chip>
+            )}
+
+            {/* Summary */}
+            <div className="mt-3">
+              <p className="text-xs text-zinc-500">Summary</p>
+              <p className="text-sm leading-relaxed text-zinc-300">{props.profile.summary}</p>
+            </div>
+
+            {/* Skills */}
+            <div className="mt-3">
+              <p className="mb-1.5 text-xs text-zinc-500">Skills {props.profile.skills.length ? `(${props.profile.skills.length})` : ""}</p>
+              <div className="flex flex-wrap gap-1.5">
+                {props.profile.skills.map((s) => (
+                  <Chip key={s} tone="match">
+                    {s}
+                  </Chip>
+                ))}
+                {props.profile.skills.length === 0 && <span className="text-sm text-zinc-600">none detected</span>}
+              </div>
+            </div>
+
+            {/* Work Experience */}
+            {props.profile.workExperience.length > 0 && (
+              <div className="mt-4">
+                <p className="mb-2 text-xs text-zinc-500">Work experience ({props.profile.workExperience.length})</p>
+                <div className="space-y-3">
+                  {props.profile.workExperience.map((w, i) => (
+                    <div key={i} className="rounded-lg border border-zinc-800 bg-zinc-950/50 p-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <p className="text-sm font-semibold text-white">{w.title}</p>
+                          <p className="text-xs text-zinc-400">{w.company}</p>
+                        </div>
+                        <span className="shrink-0 text-[11px] text-zinc-500">
+                          {[w.startDate, w.endDate].filter(Boolean).join(" – ")}
+                          {w.duration ? ` · ${w.duration}` : ""}
+                        </span>
+                      </div>
+                      {w.description && <p className="mt-1.5 text-xs leading-relaxed text-zinc-400">{w.description}</p>}
+                      {w.highlights && w.highlights.length > 0 && (
+                        <ul className="mt-1.5 space-y-0.5">
+                          {w.highlights.map((h, j) => (
+                            <li key={j} className="text-xs text-zinc-400">• {h}</li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
                   ))}
-                  {props.profile.skills.length === 0 && <span className="text-sm text-zinc-600">none detected</span>}
                 </div>
               </div>
-              {props.profile.projects.length > 0 && (
-                <div className="col-span-2">
-                  <p className="mb-1.5 text-xs text-zinc-500">Projects</p>
-                  <ul className="space-y-1 text-sm text-zinc-300">
-                    {props.profile.projects.map((p, i) => (
-                      <li key={i}>
-                        <span className="font-semibold text-zinc-200">{p.name}</span> · {p.description}
-                      </li>
-                    ))}
-                  </ul>
+            )}
+
+            {/* Projects */}
+            {props.profile.projects.length > 0 && (
+              <div className="mt-4">
+                <p className="mb-1.5 text-xs text-zinc-500">Projects</p>
+                <ul className="space-y-1 text-sm text-zinc-300">
+                  {props.profile.projects.map((p, i) => (
+                    <li key={i}>
+                      <span className="font-semibold text-zinc-200">{p.name}</span> · {p.description}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Languages / Certifications / Availability */}
+            <div className="mt-3 flex flex-wrap gap-4 text-xs">
+              {props.profile.languages && props.profile.languages.length > 0 && (
+                <div>
+                  <p className="text-zinc-500">Languages</p>
+                  <p className="text-zinc-300">{props.profile.languages.join(", ")}</p>
+                </div>
+              )}
+              {props.profile.certifications && props.profile.certifications.length > 0 && (
+                <div>
+                  <p className="text-zinc-500">Certifications</p>
+                  <p className="text-zinc-300">{props.profile.certifications.join(", ")}</p>
+                </div>
+              )}
+              {props.profile.availability && (
+                <div>
+                  <p className="text-zinc-500">Availability</p>
+                  <p className="text-zinc-300">{props.profile.availability}</p>
+                </div>
+              )}
+              {props.profile.education && (
+                <div>
+                  <p className="text-zinc-500">Education</p>
+                  <p className="text-zinc-300">{props.profile.education}</p>
                 </div>
               )}
             </div>
